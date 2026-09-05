@@ -1,24 +1,27 @@
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
+"use client"
 
-export default async function SettingPage() {
-  const { userId } = await auth();
+import { useLoginUser } from "@/app/components/LoginUserProvider";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-  const res = await fetch(
-    `http://localhost:3001/accounts/role/${userId}`,
-    {
-      cache:"no-store"
+export default function SettingsPage() {
+
+  const loginUser = useLoginUser();
+  const router = useRouter();
+
+  // adminじゃなければトップへリダイレクト
+  useEffect(() => {
+    if(loginUser && loginUser.role !== 'admin'){
+      router.replace("/dashboard")
     }
-  );
+  },[loginUser,router])
 
-  const role = await res.json();
-
-  if(role != 'admin'){
-    redirect("/dashboard")
+  // useContextから情報が得られていない場合は何も返さない
+  if(!loginUser || loginUser?.role !== "admin"){
+    return null;
   }
-  return (
-    <div>
-      Setting
-    </div>
-  );
+  else if(loginUser.role === 'admin'){
+    return <div>Settings</div>
+  }
+
 }

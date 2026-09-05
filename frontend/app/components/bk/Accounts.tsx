@@ -1,42 +1,31 @@
 "use client";
-
-import { useEffect, useState } from 'react'
-import { useLoginUser } from './LoginUserProvider';
+import { formatInTimeZone } from 'date-fns-tz';
+import React, { useEffect, useState } from 'react'
 
 const url = "http://localhost:3001/accounts";
 
+
 interface user {
   id: number,
-  clerk_user_id: string,
-  name: string,
-  email: string,
-  role: string,
-  create_at: string,
-  deleteflag: number,
-  group_id: number,
-  group_name: string,
-  group_branch: string
+  clerk_user_id : string,
+  name : string,
+  email : string,
+  role : string,
+  role_name : string,
+  create_at : string
 }
 
 const Accounts = () => {
 
-  // 変更したユーザー情報を一時保存
   const [users, setUsers] = useState<user[]>([]);
-  // DBから所得したときのユーザー情報
   const [originalUsers, setOriginalUsers] = useState<user[]>([]);
-  // 変更したユーザーのカラム変更管理
-  const [selectedId, setSelectedId] = useState<number | null>(null)
-
-  // LoginUserProvider.tsxより現在のログインユーザー情報を所得
-  const LoginUser = useLoginUser();  
-
 
   // fetch関数
   useEffect(() => {
     fetchUsers();
   },[]);
 
-  // このコンポーネントは初回のみ動かす(DBからのユーザー所得)
+  // このコンポーネントは初回のみ動かす
   const fetchUsers = () => {
     fetch(url)
     .then((res) => { return res.json()})
@@ -48,7 +37,7 @@ const Accounts = () => {
     
   }
 
-  // プルダウンを変更するたびにsetUsersへ連携して一時保存
+  // タブを変更するたびにsetUsersへ連携して一時保存
   const updateUsers = (targetRole:string,targetId:number) => {
     setUsers(users.map((user) => {
       if(user.id === targetId) {
@@ -58,31 +47,27 @@ const Accounts = () => {
       }
       return user;
     }))
-    setSelectedId(targetId)
   }
+
 
   // 保存ボタンを押すと、差分のみDBへ連携される
   const saveUsers = () => {
-    
     const diffUsers = users.filter((user) => {
       const originalUser = originalUsers.find((origin) => {
         return origin.id === user.id
       });
-      return originalUser && originalUser.role !== user.role || originalUser && originalUser.deleteflag
+      return originalUser && originalUser.role !== user.role
     });
     console.log(diffUsers);
     
     if(diffUsers.length === 0) {
       return alert('変更がありません。')
     }
-    if(confirm('変更を実施しますか？')) {
-      updateSQL(diffUsers)
-    } else{
-      return alert('キャンセルしました。')
-    }
+    updateSQL(diffUsers)
   };
 
-  // DBへ連携される流れ（非同期のためasyncを使用）
+
+  // DBへ連携される流れ
     const updateSQL = async (diffUsers:user[]) => {
       const res = await fetch(url,{
         body :JSON.stringify(diffUsers),
@@ -93,8 +78,18 @@ const Accounts = () => {
       const result = await res.json();
       alert(result.message);
       fetchUsers();
-      setSelectedId(null)
     }
+
+  
+
+  // 時間を00:00の表記で表す（勤務合計時間/勤務時間で使用）
+  const formatTime = (hours:number) => {
+    const h = Math.floor( hours / 60)
+    const m = Math.floor( hours % 60)
+    return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`
+  }
+  
+
 
   return (
     <>
@@ -109,37 +104,29 @@ const Accounts = () => {
         <div className='w-full h-[60vh] overflow-scroll'> 
           <table className='min-w-max text-center border-spacing-8 mb-4'>
             <thead>
-              <tr className='border-b-2 border-1'>
+              <tr>
                 <th className="w-20 px-4 py-2">No</th>
-                <th className="w-24 px-4">氏名</th>
-                <th className="w-24 px-4">メールアドレス</th>
-                <th className="w-28 px-4">権限</th>
-                <th className="w-28 px-4">所属</th>
-                <th className="w-28 px-4">作成日</th>
-                <th className="w-28 px-4">削除</th>
+                <th className="w-20 px-4 py-2">氏名</th>
+                <th className="w-20 px-4 py-2">メールアドレス</th>
+                <th className="w-28 px-4 py-2">権限</th>
+                <th className="w-28 px-4 py-2">作成日</th>
               </tr>
             </thead>
             <tbody>
 
               {users.map((user,index) => {
                 return (
-                <tr key={index} className={selectedId === user.id  ? 'bg-blue-100 border-1' :'border-1'}>
+                <tr key={index}>
                   <td>{user.id}</td>
                   <td>{user.name}</td>
                   <td>{user.email}</td>
                   <td>
-                    {/* 本店 or 同じ支店に所属している場合に権限変更可能 */}
-                    {LoginUser && LoginUser.group_branch == '本店' || LoginUser && LoginUser.group_name === user.group_name ? (
-                          <select name='role' value={user.role} onChange={(e) => updateUsers(e.target.value,user.id)}>
-                            <option value="user">ユーザー</option>
-                            <option value="admin">管理者</option>
-                          </select>                      
-                        ) : (user.role === 'admin' ? '管理者' : 'ユーザー')
-                      } 
+                    <select name='role' value={user.role} onChange={(e) => updateUsers(e.target.value,user.id)}>
+                      <option value="user">ユーザー</option>
+                      <option value="admin">管理者</option>
+                    </select>
                   </td>
-                  <td>{user.group_name}</td>
                   <td>{user.create_at.toString().slice(0,19).replace('T',' ')}</td>
-                  <td><button className="btn btn-outline btn-secondary btn-xs">削除</button></td>
                 </tr>
               )})}
             </tbody>

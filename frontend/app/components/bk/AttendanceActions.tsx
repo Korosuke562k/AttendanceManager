@@ -1,6 +1,7 @@
 "use client"
+import { log } from 'console';
 import React, { useEffect, useState } from 'react'
-import { useLoginUser } from './LoginUserProvider';
+import { resumeToPipeableStream } from 'react-dom/server';
 
 const url = "http://localhost:3001/";
 
@@ -14,10 +15,6 @@ const AttendanceActions = () => {
   const [stopDateTime, setStopDateTime] = useState<Date | null>(null);
 
   let diff = 0;
-
-  const LoginUser = useLoginUser();
-  const LoginUserId = LoginUser?.id;
-  
 
 
   //各ボタンを押したときの操作（退勤ボタンのみ、1秒後にresetするためにuseEffect,setTimeoutを使用）
@@ -43,7 +40,7 @@ const AttendanceActions = () => {
   // 休憩終了を押したとき
   const restStart = () => {
     if(!startDateTime || !reStopTime){
-      alert('出勤・休憩開始ボタンのどちらかが押されていません。')
+      alert('出勤休憩開始ボタンのどちらかが押されていません。')
     }
     else if(reStopTime){
       setRestStartTime(new Date());
@@ -53,11 +50,6 @@ const AttendanceActions = () => {
 
   // 退勤ボタンを押したとき
   const clickStop = () => {
-    // ログインユーザーがない場合
-    if (!LoginUserId) {
-      alert("ログインユーザーが取得できません。");
-      return;
-    }
     // 出勤ボタンを教えていない場合はアラートを出す
     if (!startDateTime) {
       alert('出勤ボタンが押されていません。')
@@ -87,18 +79,16 @@ const AttendanceActions = () => {
 
 
     const addData = {
-      userId:LoginUserId, 
       date: startDateTime,
       clockin: startDateTime,
       reststopwork: reStopTime,
       reststartwork: reStartTime,
-      clockout: stop, 
+      clockout: stop,
       workingtime : diff,
       comment: null,
     } 
 
     interface addData {
-      userId: number;
       date: Date;
       clockin: Date;
       reststopwork: Date | null;
@@ -126,7 +116,7 @@ const AttendanceActions = () => {
     // 1秒空けてからリセットする。
     setTimeout(()=> {
       alert(addResult)
-      // console.log(addResult);
+      console.log(addResult);
       Reset();
     },1000)
   }
@@ -170,32 +160,33 @@ const AttendanceActions = () => {
 
 
   return (
-      <div className='flex flex-col w-full'>
+      <div className='flex flex-col w-full px-40'>
         <div className='mt-4 mx-auto w-full max-w-screen-md'>
+          {/* <div className='text-center font-bold text-3xl p-5'>打刻画面</div> */}
           <div className='flex flex-col'>
             <div className='text-center'>
               <p className='text-2xl mt-4'>{date.toLocaleDateString("ja-JP")}</p>
               <p className='mt-5 text-7xl font-bold'>{time? time.toLocaleTimeString() : "--:--:--"}</p>
             </div>
-            <div className='flex flex-wrap justify-center gap-10 mt-10'>
+            <div className='flex justify-center gap-10 mt-20'>
               <div className='flex flex-col'>
-                <button className="w-30 h-30 btn bg-[#4DB6AC] rounded-full" onClick={clickStart}>出勤</button>
-                <div className='w-30 h-10 text-center font-bold text-3xl mt-4 border'>{startDate}</div>
+                <button className="w-40 h-40 btn btn-error rounded-full" onClick={clickStart}>出勤</button>
+                <div className='w-40 h-10 text-center font-bold text-3xl mt-4 border'>{startDate}</div>
               </div>
               <div className='flex flex-col'>
-                <button className="w-30 h-30 btn bg-[#F2C94C] rounded-full" onClick={restStop}>休憩開始</button>
-                <div className='w-30 h-10 text-center font-bold text-3xl mt-4 border'>{reStopDate}</div>
+                <button className="w-40 h-40 btn btn-error rounded-full" onClick={restStop}>休憩開始</button>
+                <div className='w-40 h-10 text-center font-bold text-3xl mt-4 border'>{reStopDate}</div>
               </div>
               <div className='flex flex-col'>
-                <button className="w-30 h-30 btn bg-[#64B5F6] rounded-full" onClick={restStart}>休憩終了</button>
-                <div className='w-30 h-10 text-center font-bold text-3xl mt-4 border'>{reStartDate}</div>
+                <button className="w-40 h-40 btn btn-error rounded-full" onClick={restStart}>休憩終了</button>
+                <div className='w-40 h-10 text-center font-bold text-3xl mt-4 border'>{reStartDate}</div>
               </div>              
               <div className='flex flex-col'>
-                <button className="w-30 h-30 btn bg-[#E57373] rounded-full" onClick={clickStop}>退勤</button>
-                <div className='w-30 h-10 text-center font-bold text-3xl mt-4 border'>{stopDate}</div>
+                <button className="w-40 h-40 btn btn-error rounded-full" onClick={clickStop}>退勤</button>
+                <div className='w-40 h-10 text-center font-bold text-3xl mt-4 border'>{stopDate}</div>
               </div>
             </div>
-            {/* <div className='mt-10'>
+            <div className='mt-10'>
               <h3 className='font-bold underline mb-5'>お知らせ</h3>
               <table className='border-collapse border w-full text-center border-spacing-8 mb-4'>
                 <thead>
@@ -218,7 +209,7 @@ const AttendanceActions = () => {
               </tbody>
 
               </table>
-            </div> */}
+            </div>
           </div>
         </div>
       </div>

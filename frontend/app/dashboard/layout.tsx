@@ -2,8 +2,18 @@ import { auth } from "@clerk/nextjs/server";
 import Header from "../components/Header";
 import Aside from "../components/Aside";
 import Footer from "../components/Footer";
+import { LoginUserProvider } from "../components/LoginUserProvider";
+import { redirect } from "next/navigation";
 
-
+interface LoginUser {
+  id: number,
+  clerk_user_id: string,
+  name: string,
+  email: string,
+  role: string,
+  create_at: string,
+  deleteflag: number
+}
 
 export default async function DashboardLayout({
   children,
@@ -13,7 +23,7 @@ export default async function DashboardLayout({
   await auth.protect();
 
   const { userId } = await auth();
-  let role = '';
+  let loginUser:LoginUser | null = null;
 
   if (userId) {
     const res = await fetch(
@@ -25,23 +35,27 @@ export default async function DashboardLayout({
 
     if (res.ok) {
       const result = await res.json();
-      role = result;
-      console.log(role);
-      
+      loginUser = result;
+      // console.log("loginUser",loginUser);
+    }
+
+    if(loginUser?.deleteflag === 1){
+      redirect("/account-disabled")
     }
   }
 
-
   return (
-    <main>
-      <div>
-        <Header />
-        <div className='flex'>
-          <Aside role={role}/>
-          <main className="mx-auto">{children}</main>
-        </div>
-        <Footer />
-      </div>
-    </main>
+    <LoginUserProvider LoginUser={loginUser}>
+        <main>
+          <div>
+            <Header />
+            <div className='sm:flex'>
+              <Aside />
+              <main className="max-sm:h-[calc(100vh-80px-30px-40px)] mx-auto px-5">{children}</main>
+            </div>
+            <Footer />
+          </div>
+        </main>
+    </LoginUserProvider>
     )
 }

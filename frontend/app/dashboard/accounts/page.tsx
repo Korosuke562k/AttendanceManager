@@ -1,25 +1,29 @@
+"use client"
+
 import Accounts from "@/app/components/Accounts";
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
+import { useLoginUser } from "@/app/components/LoginUserProvider";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 
-export default async function AccountsPage() {
-  const { userId } = await auth();
+export default function AccountsPage() {
 
-  const res = await fetch(
-    `http://localhost:3001/accounts/role/${userId}`,
-    {
-      cache:"no-store"
+  const loginUser = useLoginUser();
+  const router = useRouter();
+
+  // adminじゃなければトップへリダイレクト
+  useEffect(() => {
+    if(loginUser && loginUser.role !== 'admin'){
+      router.replace("/dashboard")
     }
-  );
+  },[loginUser,router])
 
-  const role = await res.json();
-
-  if(role != 'admin'){
-    redirect("/dashboard")
+  // useContextから情報が得られていない場合は何も返さない
+  if(!loginUser || loginUser?.role !== "admin"){
+    return null;
+  }
+  else if(loginUser.role === 'admin'){
+    return <Accounts />
   }
 
-  return (
-    <Accounts />
-  );
 }

@@ -1,3 +1,5 @@
+// Clerkのwebhookを用いてユーザー情報をcreate,getするためのAPI
+
 import { verifyWebhook } from '@clerk/nextjs/webhooks'
 import { NextRequest } from 'next/server'
 
@@ -38,7 +40,6 @@ export async function POST(req: NextRequest) {
 
       console.log("Expressへ送るデータ");
       console.log(InsertData);
-      
       
       // Expressへユーザー登録情報を連携
       const response = await fetch("http://localhost:3001/api/users",{

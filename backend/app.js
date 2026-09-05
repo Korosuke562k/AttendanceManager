@@ -39,7 +39,7 @@ app.get('/', (req, res) => {
 // attendancelist -勤怠記録をDBへ登録-
 app.post('/',(req,res) => {
   // SQLからの情報をそれぞれ定義
-  const { clockin , reststopwork , reststartwork , clockout , workingtime , comment } = req.body;
+  const {userId, clockin , reststopwork , reststartwork , clockout , workingtime , comment } = req.body;
   // 日本時間へ変更
   const workDate = new Date(clockin).toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" })
   const dateTimeModify = (time) => {
@@ -50,9 +50,9 @@ app.post('/',(req,res) => {
   }
   // InsertSQL構文
   const insertQuery = `INSERT INTO attendancelist 
-        (date , clockin , reststopwork , reststartwork , clockout , workingtime , comment)
-        VALUES (? , ? , ? , ? , ? , ? , ? )`;
-  const insertValues = [ workDate , dateTimeModify(clockin) , dateTimeModify(reststopwork) , dateTimeModify(reststartwork) , dateTimeModify(clockout) , workingtime , comment ];
+        (date , clockin , reststopwork , reststartwork , clockout , workingtime , comment , user_id)
+        VALUES (? , ? , ? , ? , ? , ? , ? , ?)`;
+  const insertValues = [ workDate , dateTimeModify(clockin) , dateTimeModify(reststopwork) , dateTimeModify(reststartwork) , dateTimeModify(clockout) , workingtime , comment ,userId ];
   connection.query(insertQuery, insertValues,(error, result) => {
     if(error) {
     console.error(error);
@@ -93,11 +93,22 @@ app.post('/api/users',(req,res) => {
 // 社員一覧を所得
 app.get('/accounts', (req,res) => {
   const userSelect = `
-    SELECT *,
-      CASE  WHEN USERS.role = 'user' then 'ユーザー'
-          WHEN USERS.role = 'admin' then '管理者' 
-      END role_name 
-    FROM USERS`;
+    SELECT USERS.id,USERS.name,USERS.email,role,
+      CASE
+        WHEN USERS.role = 'user' then 'ユーザー'
+        WHEN USERS.role = 'admin' then '管理者'
+      END role_name,
+      USERS.create_at,USERS.deleteflag ,group_id,
+      M_group.NAME AS group_name,
+      CASE
+        WHEN M_group.branch_flag = 1 then '支店'
+        WHEN M_group.branch_flag = 0 then '本店'
+      END group_branch
+    FROM USERS
+    LEFT JOIN M_group
+      ON USERS.group_id = M_group.id
+    WHERE USERS.deleteflag != 1;
+    `;
   connection.query(userSelect, (error,result) => {
     if(error) {
       console.log("社員情報所得失敗",error);
@@ -148,14 +159,28 @@ app.get('/accounts/role/:clerkUserId',(req,res) => {
   console.log(req.params);
   
   const roleSelectSQL = `
-    SELECT role FROM users WHERE clerk_user_id = ?
-  `
+      SELECT USERS.id,USERS.name,USERS.email,role,
+      CASE
+        WHEN USERS.role = 'user' then 'ユーザー'
+        WHEN USERS.role = 'admin' then '管理者'
+      END role_name,
+      USERS.create_at,USERS.deleteflag ,group_id,
+      M_group.NAME AS group_name,
+      CASE
+        WHEN M_group.branch_flag = 1 then '支店'
+        WHEN M_group.branch_flag = 0 then '本店'
+      END group_branch
+    FROM USERS
+    LEFT JOIN M_group
+      ON USERS.group_id = M_group.id
+    WHERE USERS.clerk_user_id = ?;
+    `;
   connection.query(roleSelectSQL,clerkUserId, (error,result) => {
     if(error){
-      return console.log('role所得失敗',error)
+      return console.log('ユーザー情報所得失敗',error)
     }
-    res.json(result[0].role)
-    console.log('role所得成功!',result);
+    res.json(result[0])
+    console.log('ユーザー情報所得成功!',result[0]);
     
   })
 })
@@ -163,4 +188,3 @@ app.get('/accounts/role/:clerkUserId',(req,res) => {
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
-
