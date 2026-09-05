@@ -5,9 +5,7 @@ const mysql = require('mysql2')
 const cors = require('cors')
 
 const date = new Date();
-
 require('dotenv').config();
-
 
 app.use(cors())
 app.use(express.urlencoded({extended: true}))
@@ -152,7 +150,7 @@ app.put('/accounts', (req,res) => {
   });
 })
 
-// ログインユーザーのrole を所得
+// ログインユーザー情報 を所得
 app.get('/accounts/role/:clerkUserId',(req,res) => {
   const clerkUserId = req.params.clerkUserId;
 
@@ -181,6 +179,19 @@ app.get('/accounts/role/:clerkUserId',(req,res) => {
     }
     res.json(result[0])
     console.log('ユーザー情報所得成功!',result[0]);
+    
+  })
+})
+
+// グループマスタを所得
+app.get('/group',(req,res) => {
+  const groupSelect = `SELECT * FROM M_group`;
+  connection.query(groupSelect,(error, result) => {
+    if(error){
+      return console.log('グループマスタ所得失敗',error);
+    }
+    res.json(result)
+    console.log('グループマスタ所得成功！',result);
     
   })
 })
