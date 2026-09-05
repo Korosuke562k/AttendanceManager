@@ -19,23 +19,6 @@ interface attendance {
   user_id : number
 }
 
-// interface ListProps {
-//   id: number,
-//   clerk_user_id: string,
-//   name: string,
-//   email: string,
-//   role: string,
-//   create_at: string,
-//   deleteflag: number,
-//   group_id: number,
-//   group_name: string,
-//   group_branch: string
-// }
-
-// interface logionProps {
-//   loginUser: user | null;
-// }
-
 interface user {
   id: number,
   clerk_user_id: string,

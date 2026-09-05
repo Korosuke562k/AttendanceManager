@@ -12,7 +12,10 @@ interface LoginUser {
   email: string,
   role: string,
   create_at: string,
-  deleteflag: number
+  deleteflag: number,
+  group_id: number,
+  group_name: string,
+  group_branch: string
 }
 
 export default async function DashboardLayout({
