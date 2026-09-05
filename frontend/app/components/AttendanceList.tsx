@@ -138,8 +138,8 @@ const AttendanceList = () => {
     <>
       <div className='flex flex-col w-full'>
         <div className='mx-auto max-w-screen-lg'>
-          <div className='font-bold text-3xl p-5'>勤怠一覧</div>
-          <div className='flex gap-4 items-center mb-4'>
+          <div className='font-bold text-3xl pt-2'>勤怠一覧</div>
+          <div className='flex gap-4 items-center py-3'>
             <div className='pl-4 flex gap-1  items-center'>
               <button className='text-black' onClick={() => handleChangeMonth('prev')}>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5}  stroke="currentColor" className="size-8">
